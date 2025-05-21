@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import zipCodeData from '../public/zipcode-data.json';
 
 interface ZipCodeData {
   zipCode: string;
@@ -14,16 +13,36 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState<ZipCodeData[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<ZipCodeData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (searchTerm.length >= 3) {
-      const filtered = zipCodeData.filter((item: ZipCodeData) =>
-        item.zipCode.startsWith(searchTerm)
-      );
-      setSuggestions(filtered.slice(0, 5));
-    } else {
-      setSuggestions([]);
-    }
+    const fetchSuggestions = async () => {
+      if (searchTerm.length < 3) {
+        setSuggestions([]);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`/api/zipcode?q=${encodeURIComponent(searchTerm)}`);
+        if (!response.ok) {
+          throw new Error('検索に失敗しました');
+        }
+        const data = await response.json();
+        setSuggestions(data.results);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '予期せぬエラーが発生しました');
+        setSuggestions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(timeoutId);
   }, [searchTerm]);
 
   const handleSelect = (address: ZipCodeData) => {
@@ -45,6 +64,16 @@ export default function Home() {
             placeholder="郵便番号を入力（例：1000001）"
             className="w-full p-4 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          
+          {isLoading && (
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+            </div>
+          )}
+          
+          {error && (
+            <div className="mt-2 text-red-500 text-sm">{error}</div>
+          )}
           
           {suggestions.length > 0 && (
             <div className="absolute w-full mt-1 bg-white border rounded-lg shadow-lg">
