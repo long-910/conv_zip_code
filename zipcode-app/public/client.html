@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>郵便番号検索クライアント</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8 text-center">郵便番号検索クライアント</h1>
+        
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+            <div class="mb-6">
+                <label for="zipcode" class="block text-sm font-medium text-gray-700 mb-2">郵便番号</label>
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="zipcode"
+                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="郵便番号を入力（例：1000001）"
+                    >
+                    <div id="loading" class="hidden absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                    </div>
+                </div>
+                <div id="error" class="mt-2 text-red-500 text-sm hidden"></div>
+            </div>
+
+            <div id="suggestions" class="space-y-2"></div>
+
+            <div id="result" class="mt-6 hidden">
+                <h2 class="text-xl font-semibold mb-4">住所情報</h2>
+                <div class="space-y-2">
+                    <p><span class="font-medium">郵便番号：</span><span id="result-zipcode"></span></p>
+                    <p><span class="font-medium">都道府県：</span><span id="result-prefecture"></span></p>
+                    <p><span class="font-medium">市区町村：</span><span id="result-city"></span></p>
+                    <p><span class="font-medium">町域：</span><span id="result-street"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const zipcodeInput = document.getElementById('zipcode');
+        const loadingIndicator = document.getElementById('loading');
+        const errorMessage = document.getElementById('error');
+        const suggestionsContainer = document.getElementById('suggestions');
+        const resultContainer = document.getElementById('result');
+        let timeoutId = null;
+
+        async function searchZipcode(query) {
+            if (query.length < 3) {
+                suggestionsContainer.innerHTML = '';
+                return;
+            }
+
+            loadingIndicator.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+
+            try {
+                const response = await fetch(`/api/zipcode?q=${encodeURIComponent(query)}`);
+                if (!response.ok) {
+                    throw new Error('検索に失敗しました');
+                }
+                const data = await response.json();
+                
+                if (data.results.length === 0) {
+                    suggestionsContainer.innerHTML = '<p class="text-gray-500">該当する住所が見つかりませんでした</p>';
+                } else {
+                    suggestionsContainer.innerHTML = data.results.map(address => `
+                        <div class="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer" 
+                             onclick="selectAddress(${JSON.stringify(address).replace(/"/g, '&quot;')})">
+                            ${address.zipCode} - ${address.prefecture}${address.city}${address.street}
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                errorMessage.textContent = err.message;
+                errorMessage.classList.remove('hidden');
+                suggestionsContainer.innerHTML = '';
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        function selectAddress(address) {
+            zipcodeInput.value = address.zipCode;
+            suggestionsContainer.innerHTML = '';
+            
+            document.getElementById('result-zipcode').textContent = address.zipCode;
+            document.getElementById('result-prefecture').textContent = address.prefecture;
+            document.getElementById('result-city').textContent = address.city;
+            document.getElementById('result-street').textContent = address.street;
+            
+            resultContainer.classList.remove('hidden');
+        }
+
+        zipcodeInput.addEventListener('input', (e) => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+            timeoutId = setTimeout(() => {
+                searchZipcode(e.target.value);
+            }, 300);
+        });
+    </script>
+</body>
+</html> 
