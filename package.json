@@ -1,0 +1,19 @@
+{
+  "name": "zipcode-converter",
+  "version": "1.0.0",
+  "description": "郵便番号データ変換ツール",
+  "main": "convert.ts",
+  "scripts": {
+    "convert": "ts-node convert.ts"
+  },
+  "dependencies": {
+    "@types/iconv-lite": "^0.0.1",
+    "csv-parse": "^5.5.3",
+    "iconv-lite": "^0.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
