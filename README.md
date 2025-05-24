@@ -137,3 +137,26 @@ GET /api/zipcode?q={query}
 4. キャッシュ機能の実装
 5. セキュリティの強化
 6. レスポンシブデザインの改善
+
+## Docker 環境での実行方法
+
+### 1. 環境の準備
+
+```bash
+# Dockerイメージのビルド
+docker-compose build
+
+# コンテナの起動
+docker-compose up
+```
+
+### 2. アクセス方法
+
+- ブラウザで `http://localhost:3000` にアクセス
+- シンプルな HTML クライアントは `http://localhost:3000/client.html` でアクセス可能
+
+### 3. 開発時の注意点
+
+- ソースコードの変更は自動的にホットリロードされます
+- `node_modules`はコンテナ内で管理されます
+- コンテナの停止は `docker-compose down` で実行できます
